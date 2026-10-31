@@ -1,0 +1,59 @@
+<div class="page-container container">
+  <!-- Breadcrumbs -->
+  <div class="breadcrumb">
+    <a routerLink="/"><i class="fa-solid fa-house"></i> Home</a>
+    <i class="fa-solid fa-chevron-right separator"></i>
+    <a routerLink="/classes">Classes</a>
+    <i class="fa-solid fa-chevron-right separator"></i>
+    <span class="current">{{ currentClass?.name || 'Class ' + classId }}</span>
+  </div>
+
+  <div class="page-header">
+    <div class="header-content">
+      <span class="class-pill">{{ currentClass?.name || 'Class ' + classId }}</span>
+      <h1 class="page-title">Available Subjects</h1>
+      <p class="page-subtitle">Select a subject to view all chapters and start practicing MCQs</p>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-state">
+    <div class="spinner"></div>
+    <p>Loading subjects...</p>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error" class="alert alert-danger">
+    <i class="fa-solid fa-circle-exclamation"></i>
+    <span>{{ error }}</span>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!loading && !error && subjects.length === 0" class="empty-state card">
+    <div class="empty-icon"><i class="fa-solid fa-folder-open"></i></div>
+    <h3>No subjects added yet</h3>
+    <p>Subjects for this class have not been configured yet. Check back soon or contact your teacher.</p>
+    <a routerLink="/classes" class="btn btn-secondary">Back to Classes</a>
+  </div>
+
+  <!-- Subjects Grid -->
+  <div *ngIf="!loading && !error && subjects.length > 0" class="subjects-grid">
+    <div
+      *ngFor="let sub of subjects"
+      class="subject-card card card-hover"
+      (click)="selectSubject(sub)"
+    >
+      <div class="subject-icon">
+        <i class="fa-solid" [ngClass]="sub.icon || 'fa-book-atlas'"></i>
+      </div>
+      <div class="subject-details">
+        <h3 class="subject-name">{{ sub.name }}</h3>
+        <p class="subject-desc">{{ sub.description || 'Full syllabus coverage, chapter-wise MCQs and tests' }}</p>
+      </div>
+      <div class="card-arrow">
+        <i class="fa-solid fa-chevron-right"></i>
+      </div>
+    </div>
+  </div>
+</div>
+

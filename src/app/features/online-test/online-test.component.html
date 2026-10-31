@@ -1,0 +1,171 @@
+<div class="test-page container">
+  <!-- Loading state -->
+  <div *ngIf="loading" class="loading-state">
+    <div class="spinner"></div>
+    <p>Validating private test link and preparing your session...</p>
+  </div>
+
+  <!-- Access Denied (Requirement #10: Online tests must be accessible only to students invited through private test links) -->
+  <div *ngIf="accessDenied" class="access-denied-card card">
+    <div class="denied-icon"><i class="fa-solid fa-lock"></i></div>
+    <h2>Private Test - Access Restricted</h2>
+    <p>
+      This online test is restricted to specifically invited students only. Your account has not received an invitation for this test session.
+    </p>
+    <div class="denied-actions">
+      <a routerLink="/classes" class="btn btn-primary">Go to Practice MCQs</a>
+      <a routerLink="/" class="btn btn-secondary">Return Home</a>
+    </div>
+  </div>
+
+  <!-- Error Alert -->
+  <div *ngIf="error" class="alert alert-danger">
+    <i class="fa-solid fa-circle-exclamation"></i>
+    <span>{{ error }}</span>
+  </div>
+
+  <!-- Active Test Interface -->
+  <div *ngIf="!loading && !accessDenied && test && !isCompleted" class="test-interface">
+    <!-- Test Top Bar with Timer -->
+    <div class="test-topbar card">
+      <div class="test-info">
+        <span class="badge badge-warning">Private Test Session</span>
+        <h2 class="test-title">{{ test.title }}</h2>
+      </div>
+
+      <!-- Live Countdown Timer (Requirement #11) -->
+      <div class="timer-display" [class.urgent]="timerUrgent">
+        <i class="fa-solid fa-clock"></i>
+        <div class="time-box">
+          <span class="label">Time Remaining</span>
+          <span class="time">{{ formattedTime }}</span>
+        </div>
+      </div>
+
+      <div class="top-actions">
+        <button class="btn btn-danger btn-sm" (click)="submitTest(false)" [disabled]="isSubmitting">
+          <span *ngIf="isSubmitting" class="spinner"></span>
+          <span *ngIf="!isSubmitting"><i class="fa-solid fa-paper-plane"></i> Submit Test</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Main Layout -->
+    <div class="test-layout">
+      <!-- Question Content -->
+      <div class="question-container card" *ngIf="currentMCQ">
+        <div class="q-meta-bar">
+          <span class="q-num">Question {{ currentIndex + 1 }} of {{ test.mcqs?.length }}</span>
+          <span class="status-badge" [class.answered]="isQuestionAnswered(currentMCQ.id)">
+            {{ isQuestionAnswered(currentMCQ.id) ? 'Answered' : 'Not Answered' }}
+          </span>
+        </div>
+
+        <div class="q-text">
+          {{ currentMCQ.question_text }}
+        </div>
+
+        <div *ngIf="currentMCQ.image_url" class="q-image-wrap">
+          <img [src]="currentMCQ.image_url" alt="Test Question Image" class="q-image" />
+        </div>
+
+        <!-- 4 Options (A, B, C, D) -->
+        <div class="options-grid">
+          <div
+            *ngFor="let opt of currentMCQ.options"
+            class="mcq-option"
+            [class.selected]="isOptionSelected(currentMCQ.id, opt.id)"
+            (click)="selectOption(currentMCQ.id, opt.id)"
+          >
+            <div class="option-badge">{{ opt.option_label }}</div>
+            <div class="option-text">{{ opt.option_text }}</div>
+          </div>
+        </div>
+
+        <!-- Bottom Question Nav -->
+        <div class="q-nav-footer">
+          <button class="btn btn-secondary" (click)="prevQuestion()" [disabled]="currentIndex === 0">
+            <i class="fa-solid fa-arrow-left"></i> Previous
+          </button>
+          <button
+            class="btn btn-primary"
+            *ngIf="test.mcqs && currentIndex < test.mcqs.length - 1"
+            (click)="nextQuestion()"
+          >
+            Next <i class="fa-solid fa-arrow-right"></i>
+          </button>
+          <button
+            class="btn btn-danger"
+            *ngIf="test.mcqs && currentIndex === test.mcqs.length - 1"
+            (click)="submitTest(false)"
+            [disabled]="isSubmitting"
+          >
+            Finish & Submit <i class="fa-solid fa-check"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Right Navigator Grid -->
+      <div class="palette-container card">
+        <h4 class="palette-title">Question Grid</h4>
+        <div class="palette-grid">
+          <button
+            *ngFor="let m of test.mcqs; let i = index"
+            class="palette-btn"
+            [class.active]="i === currentIndex"
+            [class.answered]="isQuestionAnswered(m.id)"
+            (click)="goToQuestion(i)"
+          >
+            {{ i + 1 }}
+          </button>
+        </div>
+
+        <div class="summary-stats">
+          <div class="stat-line">
+            <span>Answered:</span>
+            <strong>{{ selectedAnswers.size }} / {{ test.mcqs?.length }}</strong>
+          </div>
+          <div class="stat-line">
+            <span>Unanswered:</span>
+            <strong>{{ (test.mcqs?.length || 0) - selectedAnswers.size }}</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Requirement #11 & #12: Test Results & Automatic Result Calculation -->
+  <div *ngIf="isCompleted && attempt" class="test-result-view card">
+    <div class="result-header">
+      <div class="celebration-icon"><i class="fa-solid fa-trophy"></i></div>
+      <h2>Test Submitted Successfully!</h2>
+      <p class="subtitle">{{ test?.title }}</p>
+    </div>
+
+    <!-- Automatic Score Calculation Cards -->
+    <div class="score-card-grid">
+      <div class="score-card primary">
+        <span class="label">Total Score</span>
+        <span class="val">{{ attempt.score }} / {{ attempt.total_questions }}</span>
+      </div>
+      <div class="score-card" [ngClass]="scorePercentage >= 50 ? 'success' : 'danger'">
+        <span class="label">Percentage</span>
+        <span class="val">{{ scorePercentage }}%</span>
+      </div>
+      <div class="score-card info">
+        <span class="label">Status</span>
+        <span class="val">{{ scorePercentage >= 50 ? 'PASSED' : 'NEEDS PRACTICE' }}</span>
+      </div>
+    </div>
+
+    <div class="result-actions">
+      <a routerLink="/results" class="btn btn-primary">
+        <i class="fa-solid fa-clock-rotate-left"></i> View All My Results & Attempts
+      </a>
+      <a routerLink="/classes" class="btn btn-secondary">
+        Return to Classes
+      </a>
+    </div>
+  </div>
+</div>
+

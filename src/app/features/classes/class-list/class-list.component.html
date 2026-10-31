@@ -1,0 +1,48 @@
+<div class="page-container container">
+  <!-- Breadcrumb -->
+  <div class="breadcrumb">
+    <a routerLink="/"><i class="fa-solid fa-house"></i> Home</a>
+    <i class="fa-solid fa-chevron-right separator"></i>
+    <span class="current">Classes</span>
+  </div>
+
+  <div class="page-header">
+    <h1 class="page-title">Select Your Academic Class</h1>
+    <p class="page-subtitle">Choose Class XI or Class XII to explore available subjects and chapters</p>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-state">
+    <div class="spinner"></div>
+    <p>Loading classes...</p>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error" class="alert alert-danger">
+    <i class="fa-solid fa-circle-exclamation"></i>
+    <span>{{ error }}</span>
+  </div>
+
+  <!-- Classes Grid -->
+  <div *ngIf="!loading && !error" class="classes-grid">
+    <div
+      *ngFor="let cls of classes"
+      class="class-card"
+      [ngClass]="cls.name.includes('XII') ? 'xii-theme' : 'xi-theme'"
+      (click)="selectClass(cls)"
+    >
+      <div class="card-badge">Intermediate</div>
+      <div class="card-icon-wrap">
+        <i class="fa-solid" [ngClass]="cls.name.includes('XII') ? 'fa-award' : 'fa-graduation-cap'"></i>
+      </div>
+      <h2 class="class-name">{{ cls.name }}</h2>
+      <p class="class-desc">{{ cls.description || 'Pre-Medical, Pre-Engineering, Computer Science & General Science curricula' }}</p>
+
+      <div class="card-action-bar">
+        <span>View Subjects</span>
+        <div class="arrow-btn"><i class="fa-solid fa-arrow-right"></i></div>
+      </div>
+    </div>
+  </div>
+</div>
+

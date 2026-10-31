@@ -1,0 +1,104 @@
+<nav class="navbar">
+  <div class="nav-container">
+    <!-- Brand / Logo -->
+    <a routerLink="/" class="nav-brand" (click)="closeMobileMenu()">
+      <div class="brand-icon">
+        <i class="fa-solid fa-graduation-cap"></i>
+      </div>
+      <div class="brand-text">
+        <span class="brand-title">MCQ Master</span>
+        <span class="brand-tag">Class XI & XII</span>
+      </div>
+    </a>
+
+    <!-- Desktop Navigation Links -->
+    <div class="nav-links">
+      <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-link">
+        <i class="fa-solid fa-house"></i> Home
+      </a>
+      
+      <!-- Classes link for all authenticated students/teachers -->
+      <a *ngIf="currentUser" routerLink="/classes" routerLinkActive="active" class="nav-link">
+        <i class="fa-solid fa-book-open"></i> Classes
+      </a>
+
+      <!-- Student Results link -->
+      <a *ngIf="currentUser && currentUser.role === 'student'" routerLink="/results" routerLinkActive="active" class="nav-link">
+        <i class="fa-solid fa-chart-line"></i> My Results
+      </a>
+
+      <!-- Teacher Dashboard Link -->
+      <a *ngIf="currentUser && (currentUser.role === 'teacher' || currentUser.role === 'admin')" routerLink="/teacher" routerLinkActive="active" class="nav-link nav-link-teacher">
+        <i class="fa-solid fa-chalkboard-user"></i> Teacher Hub
+      </a>
+
+      <!-- Admin Dashboard Link -->
+      <a *ngIf="currentUser && currentUser.role === 'admin'" routerLink="/admin" routerLinkActive="active" class="nav-link nav-link-admin">
+        <i class="fa-solid fa-shield-halved"></i> Admin
+      </a>
+    </div>
+
+    <!-- Desktop Auth Controls -->
+    <div class="nav-auth">
+      <ng-container *ngIf="currentUser; else guestButtons">
+        <div class="user-pill">
+          <div class="user-avatar">
+            {{ currentUser.full_name.charAt(0).toUpperCase() || 'U' }}
+          </div>
+          <div class="user-info">
+            <span class="user-name">{{ currentUser.full_name }}</span>
+            <span class="user-role-badge badge" [ngClass]="{
+              'badge-primary': currentUser.role === 'student',
+              'badge-warning': currentUser.role === 'teacher',
+              'badge-danger': currentUser.role === 'admin'
+            }">{{ currentUser.role }}</span>
+          </div>
+        </div>
+        <button class="btn btn-secondary btn-sm" (click)="logout()">
+          <i class="fa-solid fa-arrow-right-from-bracket"></i> Logout
+        </button>
+      </ng-container>
+
+      <ng-template #guestButtons>
+        <a routerLink="/login" class="btn btn-secondary btn-sm">Login</a>
+        <a routerLink="/register" class="btn btn-primary btn-sm">Register</a>
+      </ng-template>
+    </div>
+
+    <!-- Mobile Hamburger Toggle -->
+    <button class="mobile-toggle" (click)="toggleMobileMenu()" aria-label="Toggle navigation">
+      <i class="fa-solid" [ngClass]="mobileMenuOpen ? 'fa-xmark' : 'fa-bars'"></i>
+    </button>
+  </div>
+
+  <!-- Mobile Drawer -->
+  <div class="mobile-menu" *ngIf="mobileMenuOpen">
+    <a routerLink="/" (click)="closeMobileMenu()" class="mobile-nav-link">
+      <i class="fa-solid fa-house"></i> Home
+    </a>
+    <ng-container *ngIf="currentUser">
+      <a routerLink="/classes" (click)="closeMobileMenu()" class="mobile-nav-link">
+        <i class="fa-solid fa-book-open"></i> Classes (XI & XII)
+      </a>
+      <a *ngIf="currentUser.role === 'student'" routerLink="/results" (click)="closeMobileMenu()" class="mobile-nav-link">
+        <i class="fa-solid fa-chart-line"></i> My Results
+      </a>
+      <a *ngIf="currentUser.role === 'teacher' || currentUser.role === 'admin'" routerLink="/teacher" (click)="closeMobileMenu()" class="mobile-nav-link">
+        <i class="fa-solid fa-chalkboard-user"></i> Teacher Hub
+      </a>
+      <a *ngIf="currentUser.role === 'admin'" routerLink="/admin" (click)="closeMobileMenu()" class="mobile-nav-link">
+        <i class="fa-solid fa-shield-halved"></i> Admin Panel
+      </a>
+      <div class="mobile-user-box">
+        <div class="user-name">{{ currentUser.full_name }} ({{ currentUser.role }})</div>
+        <button class="btn btn-danger btn-sm w-100" (click)="logout()">Logout</button>
+      </div>
+    </ng-container>
+    <ng-container *ngIf="!currentUser">
+      <div class="mobile-guest-box">
+        <a routerLink="/login" (click)="closeMobileMenu()" class="btn btn-secondary w-100 mb-2">Login</a>
+        <a routerLink="/register" (click)="closeMobileMenu()" class="btn btn-primary w-100">Register</a>
+      </div>
+    </ng-container>
+  </div>
+</nav>

@@ -1,0 +1,59 @@
+<div class="page-container container">
+  <!-- Breadcrumbs -->
+  <div class="breadcrumb">
+    <a routerLink="/"><i class="fa-solid fa-house"></i> Home</a>
+    <i class="fa-solid fa-chevron-right separator"></i>
+    <a routerLink="/classes">Classes</a>
+    <i class="fa-solid fa-chevron-right separator"></i>
+    <span class="current">{{ currentSubject?.name || 'Subject' }} Chapters</span>
+  </div>
+
+  <div class="page-header">
+    <span class="subject-pill">{{ currentSubject?.name || 'Subject Chapters' }}</span>
+    <h1 class="page-title">Chapter-Wise MCQ Modules</h1>
+    <p class="page-subtitle">Select a chapter below to start your timed practice with real-time feedback</p>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-state">
+    <div class="spinner"></div>
+    <p>Loading chapters...</p>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error" class="alert alert-danger">
+    <i class="fa-solid fa-circle-exclamation"></i>
+    <span>{{ error }}</span>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!loading && !error && chapters.length === 0" class="empty-state card">
+    <div class="empty-icon"><i class="fa-solid fa-book-open"></i></div>
+    <h3>No chapters found</h3>
+    <p>Chapters have not been uploaded for this subject yet.</p>
+    <a routerLink="/classes" class="btn btn-secondary">Back to Classes</a>
+  </div>
+
+  <!-- Chapters List -->
+  <div *ngIf="!loading && !error && chapters.length > 0" class="chapters-list">
+    <div
+      *ngFor="let chap of chapters"
+      class="chapter-item card card-hover"
+      (click)="startPractice(chap)"
+    >
+      <div class="chapter-order-badge">
+        {{ chap.order_num || '#' }}
+      </div>
+      <div class="chapter-info">
+        <h3 class="chapter-name">{{ chap.name }}</h3>
+        <p class="chapter-desc">{{ chap.description || 'Comprehensive multiple choice questions covering key formulas and concepts.' }}</p>
+      </div>
+      <div class="action-wrap">
+        <button class="btn btn-primary btn-sm">
+          <i class="fa-solid fa-circle-play"></i> Practice MCQs
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+

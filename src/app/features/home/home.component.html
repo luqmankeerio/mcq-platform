@@ -1,0 +1,117 @@
+<div class="home-page">
+  <!-- Hero Section -->
+  <section class="hero-section">
+    <div class="container hero-container">
+      <div class="hero-badge">
+        <i class="fa-solid fa-graduation-cap"></i> Board Exam & Entry Test Preparation
+      </div>
+      <h1 class="hero-title">
+        Master Your Academic Exams with <span class="highlight">Smart MCQs</span>
+      </h1>
+      <p class="hero-subtitle">
+        Comprehensive Chapter-Wise Practice, Real-Time Online Tests with Auto-Grading, and Detailed Explanations for Intermediate Students.
+      </p>
+
+      <!-- Key Requirement 1: Home page with Class XI and Class XII buttons -->
+      <div class="class-action-box">
+        <h3 class="action-heading">Select Your Class to Begin:</h3>
+        <div class="class-buttons">
+          <button (click)="selectClass('Class XI')" class="btn-class-card class-xi">
+            <div class="card-glow"></div>
+            <div class="card-icon">
+              <i class="fa-solid fa-book-bookmark"></i>
+            </div>
+            <div class="card-info">
+              <span class="class-tag">Intermediate Part 1</span>
+              <span class="class-title">Class XI</span>
+              <span class="class-action">Explore Subjects & Chapters <i class="fa-solid fa-arrow-right"></i></span>
+            </div>
+          </button>
+
+          <button (click)="selectClass('Class XII')" class="btn-class-card class-xii">
+            <div class="card-glow"></div>
+            <div class="card-icon">
+              <i class="fa-solid fa-award"></i>
+            </div>
+            <div class="card-info">
+              <span class="class-tag">Intermediate Part 2</span>
+              <span class="class-title">Class XII</span>
+              <span class="class-action">Explore Subjects & Chapters <i class="fa-solid fa-arrow-right"></i></span>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick stats -->
+      <div class="hero-stats">
+        <div class="stat-pill">
+          <i class="fa-solid fa-circle-check text-success"></i>
+          <span><strong>100%</strong> Chapter-Wise Coverage</span>
+        </div>
+        <div class="stat-pill">
+          <i class="fa-solid fa-stopwatch text-primary"></i>
+          <span><strong>Timed</strong> Online Mock Tests</span>
+        </div>
+        <div class="stat-pill">
+          <i class="fa-solid fa-shield-halved text-warning"></i>
+          <span><strong>Private</strong> Invitation Links</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Grid -->
+  <section class="features-section">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">Key Features</span>
+        <h2 class="section-title">Engineered for Academic Excellence</h2>
+        <p class="section-desc">Everything students, teachers, and administrators need in one unified portal.</p>
+      </div>
+
+      <div class="features-grid">
+        <div class="feature-card" *ngFor="let f of features">
+          <div class="feature-icon">
+            <i [class]="f.icon"></i>
+          </div>
+          <h3 class="feature-title">{{ f.title }}</h3>
+          <p class="feature-desc">{{ f.desc }}</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works Section -->
+  <section class="how-section">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">Learning Workflow</span>
+        <h2 class="section-title">How It Works</h2>
+      </div>
+
+      <div class="steps-grid">
+        <div class="step-card">
+          <div class="step-num">01</div>
+          <h4>Register Account</h4>
+          <p>Create your student account to access practice questions and record test attempts.</p>
+        </div>
+        <div class="step-card">
+          <div class="step-num">02</div>
+          <h4>Choose Class & Subject</h4>
+          <p>Select Class XI or XII, followed by your subject (Physics, Chemistry, Math, Biology, etc.).</p>
+        </div>
+        <div class="step-card">
+          <div class="step-num">03</div>
+          <h4>Practice or Test</h4>
+          <p>Solve chapter questions with instant red/green answer highlights or join private timed tests.</p>
+        </div>
+        <div class="step-card">
+          <div class="step-num">04</div>
+          <h4>Review Analytics</h4>
+          <p>Check automatic score calculations, review correct solutions and performance history.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+

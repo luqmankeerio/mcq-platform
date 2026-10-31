@@ -1,0 +1,78 @@
+<footer class="site-footer">
+  <div class="footer-container">
+    <!-- Column 1: Brand & Bio -->
+    <div class="footer-col brand-col">
+      <div class="footer-brand">
+        <i class="fa-solid fa-graduation-cap"></i>
+        <span>MCQ Master</span>
+      </div>
+      <p class="brand-desc">
+        A premier preparation platform designed specifically for Class XI and Class XII board and entrance examinations. Master your concepts chapter by chapter with instant feedback.
+      </p>
+      
+      <!-- Social Media Icons (Facebook, Instagram, YouTube, WhatsApp) -->
+      <div class="social-icons">
+        <a *ngFor="let s of socialLinks" [href]="s.url" target="_blank" rel="noopener noreferrer" [class]="'social-btn ' + s.bgClass" [title]="s.name">
+          <i [class]="s.icon"></i>
+        </a>
+      </div>
+    </div>
+
+    <!-- Column 2: Quick Links -->
+    <div class="footer-col">
+      <h4 class="col-title">Quick Links</h4>
+      <ul class="footer-nav">
+        <li><a routerLink="/"><i class="fa-solid fa-chevron-right"></i> Home</a></li>
+        <li><a routerLink="/classes"><i class="fa-solid fa-chevron-right"></i> Class XI MCQs</a></li>
+        <li><a routerLink="/classes"><i class="fa-solid fa-chevron-right"></i> Class XII MCQs</a></li>
+        <li><a routerLink="/login"><i class="fa-solid fa-chevron-right"></i> Student Login</a></li>
+        <li><a routerLink="/register"><i class="fa-solid fa-chevron-right"></i> Register Free</a></li>
+      </ul>
+    </div>
+
+    <!-- Column 3: Contact & Support (Contact number, WhatsApp, email) -->
+    <div class="footer-col">
+      <h4 class="col-title">Contact & Support</h4>
+      <div class="contact-item">
+        <div class="contact-icon phone-icon">
+          <i class="fa-solid fa-phone"></i>
+        </div>
+        <div class="contact-details">
+          <span class="label">Contact Number:</span>
+          <a [href]="'tel:' + contactNumber" class="value">{{ contactNumber }}</a>
+        </div>
+      </div>
+
+      <div class="contact-item">
+        <div class="contact-icon whatsapp-icon">
+          <i class="fa-brands fa-whatsapp"></i>
+        </div>
+        <div class="contact-details">
+          <span class="label">WhatsApp Support:</span>
+          <a href="https://wa.me/923001234567" target="_blank" rel="noopener" class="value">{{ contactNumber }}</a>
+        </div>
+      </div>
+
+      <div class="contact-item">
+        <div class="contact-icon email-icon">
+          <i class="fa-solid fa-envelope"></i>
+        </div>
+        <div class="contact-details">
+          <span class="label">Email:</span>
+          <a [href]="'mailto:' + email" class="value">{{ email }}</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Copyright Bar -->
+  <div class="footer-bottom">
+    <div class="bottom-container">
+      <p>&copy; {{ currentYear }} MCQ Learning Platform. All rights reserved.</p>
+      <div class="badges">
+        <span><i class="fa-solid fa-lock"></i> Supabase Protected</span>
+        <span><i class="fa-solid fa-bolt"></i> Real-time Results</span>
+      </div>
+    </div>
+  </div>
+</footer>

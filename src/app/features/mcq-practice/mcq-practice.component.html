@@ -1,0 +1,211 @@
+<div class="practice-page container">
+  <!-- Top Navigation & Header -->
+  <div class="practice-header">
+    <div class="header-left">
+      <a [routerLink]="['/classes']" class="btn btn-secondary btn-sm">
+        <i class="fa-solid fa-arrow-left"></i> Exit Practice
+      </a>
+      <div class="title-meta">
+        <h2 class="title">{{ chapterName || 'Chapter ' + chapterId }} Practice</h2>
+        <span class="badge badge-primary">Enrolled Student Access</span>
+      </div>
+    </div>
+
+    <!-- Live Score Pill -->
+    <div class="header-right" *ngIf="questionStates.length > 0">
+      <div class="score-pill">
+        <span class="label">Score:</span>
+        <span class="val">{{ totalCorrect }} / {{ totalAnswered }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-state">
+    <div class="spinner"></div>
+    <p>Loading questions...</p>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error" class="alert alert-danger">
+    <i class="fa-solid fa-circle-exclamation"></i>
+    <span>{{ error }}</span>
+  </div>
+
+  <!-- No MCQs Found -->
+  <div *ngIf="!loading && !error && questionStates.length === 0" class="empty-state card">
+    <div class="empty-icon"><i class="fa-solid fa-clipboard-question"></i></div>
+    <h3>No MCQs Available</h3>
+    <p>There are no multiple-choice questions added to this chapter yet.</p>
+    <a routerLink="/classes" class="btn btn-secondary">Return to Classes</a>
+  </div>
+
+  <!-- Question Content Box -->
+  <div *ngIf="!loading && currentState" class="practice-layout">
+    <!-- Main Question Box -->
+    <div class="question-container card">
+      <!-- Question Meta Bar -->
+      <div class="q-meta-bar">
+        <span class="q-counter">Question {{ currentIndex + 1 }} of {{ questionStates.length }}</span>
+        <span class="badge" [ngClass]="{
+          'badge-success': currentState.mcq.difficulty === 'easy',
+          'badge-warning': currentState.mcq.difficulty === 'medium',
+          'badge-danger': currentState.mcq.difficulty === 'hard'
+        }">{{ currentState.mcq.difficulty | uppercase }}</span>
+      </div>
+
+      <!-- Question Text -->
+      <div class="q-text">
+        {{ currentState.mcq.question_text }}
+      </div>
+
+      <!-- Optional Question Image -->
+      <div *ngIf="currentState.mcq.image_url" class="q-image-wrap">
+        <img [src]="currentState.mcq.image_url" alt="Question Diagram" class="q-image" />
+      </div>
+
+      <!-- 4 Options (A, B, C, D) with Green Correct / Red Wrong Highlight -->
+      <div class="options-grid">
+        <div
+          *ngFor="let opt of currentState.mcq.options"
+          [class]="getOptionClass(opt)"
+          (click)="selectOption(opt.id)"
+        >
+          <div class="option-badge">
+            <span *ngIf="!currentState.isSubmitted">{{ opt.option_label }}</span>
+            <i *ngIf="currentState.isSubmitted && opt.is_correct" class="fa-solid fa-check"></i>
+            <i *ngIf="currentState.isSubmitted && !opt.is_correct && currentState.selectedOptionId === opt.id" class="fa-solid fa-xmark"></i>
+            <span *ngIf="currentState.isSubmitted && !opt.is_correct && currentState.selectedOptionId !== opt.id">{{ opt.option_label }}</span>
+          </div>
+          <div class="option-text">
+            {{ opt.option_text }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Footer -->
+      <div class="q-footer">
+        <div class="status-msg">
+          <span *ngIf="!currentState.isSubmitted && currentState.selectedOptionId !== null" class="text-primary">
+            Option selected. Click "Check Answer" to evaluate.
+          </span>
+          <span *ngIf="currentState.isSubmitted && currentState.isCorrect" class="text-success fw-bold">
+            <i class="fa-solid fa-circle-check"></i> Correct Answer! Well done.
+          </span>
+          <span *ngIf="currentState.isSubmitted && !currentState.isCorrect" class="text-danger fw-bold">
+            <i class="fa-solid fa-circle-xmark"></i> Incorrect. Review the correct answer highlighted in green.
+          </span>
+        </div>
+
+        <div class="actions">
+          <button
+            *ngIf="!currentState.isSubmitted"
+            class="btn btn-primary"
+            (click)="submitAnswer()"
+            [disabled]="currentState.selectedOptionId === null"
+          >
+            <i class="fa-solid fa-check"></i> Check Answer
+          </button>
+
+          <button
+            *ngIf="currentState.isSubmitted && currentIndex < questionStates.length - 1"
+            class="btn btn-primary"
+            (click)="nextQuestion()"
+          >
+            Next Question <i class="fa-solid fa-arrow-right"></i>
+          </button>
+
+          <button
+            *ngIf="currentState.isSubmitted && currentIndex === questionStates.length - 1"
+            class="btn btn-success"
+            (click)="showSummary = true"
+          >
+            View Summary <i class="fa-solid fa-flag-checkered"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Explanation Panel (Displayed after submission) -->
+      <div *ngIf="currentState.isSubmitted && currentState.mcq.explanation" class="explanation-box">
+        <div class="explanation-header">
+          <i class="fa-solid fa-lightbulb"></i> Explanation & Key Concept
+        </div>
+        <p class="explanation-text">{{ currentState.mcq.explanation }}</p>
+      </div>
+    </div>
+
+    <!-- Right Side: Question Navigation Palette -->
+    <div class="palette-container card">
+      <h4 class="palette-title">Question Navigator</h4>
+      <div class="palette-grid">
+        <button
+          *ngFor="let s of questionStates; let i = index"
+          class="palette-btn"
+          [ngClass]="{
+            'active': i === currentIndex,
+            'correct-btn': s.isSubmitted && s.isCorrect,
+            'wrong-btn': s.isSubmitted && !s.isCorrect,
+            'answered': !s.isSubmitted && s.selectedOptionId !== null
+          }"
+          (click)="goToQuestion(i)"
+        >
+          {{ i + 1 }}
+        </button>
+      </div>
+
+      <div class="palette-legend">
+        <div class="legend-item"><span class="dot correct-dot"></span> Correct</div>
+        <div class="legend-item"><span class="dot wrong-dot"></span> Wrong</div>
+        <div class="legend-item"><span class="dot active-dot"></span> Current</div>
+        <div class="legend-item"><span class="dot default-dot"></span> Unanswered</div>
+      </div>
+
+      <div class="palette-nav-controls">
+        <button class="btn btn-secondary btn-sm" (click)="prevQuestion()" [disabled]="currentIndex === 0">
+          <i class="fa-solid fa-chevron-left"></i> Prev
+        </button>
+        <button class="btn btn-secondary btn-sm" (click)="nextQuestion()" [disabled]="currentIndex === questionStates.length - 1">
+          Next <i class="fa-solid fa-chevron-right"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Summary Modal -->
+  <div *ngIf="showSummary" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Practice Completed!</h3>
+        <button class="close-btn" (click)="showSummary = false">&times;</button>
+      </div>
+      <div class="modal-body text-center">
+        <div class="result-circle">
+          <span class="pct">{{ scorePercentage }}%</span>
+          <span class="lbl">Accuracy</span>
+        </div>
+        <div class="result-stats">
+          <div class="stat-box">
+            <span class="val text-success">{{ totalCorrect }}</span>
+            <span class="desc">Correct</span>
+          </div>
+          <div class="stat-box">
+            <span class="val text-danger">{{ totalAnswered - totalCorrect }}</span>
+            <span class="desc">Wrong</span>
+          </div>
+          <div class="stat-box">
+            <span class="val">{{ questionStates.length }}</span>
+            <span class="desc">Total Questions</span>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="restart()">
+          <i class="fa-solid fa-rotate-left"></i> Restart Practice
+        </button>
+        <a routerLink="/classes" class="btn btn-primary">
+          Choose Another Chapter
+        </a>
+      </div>
+    </div>
+  </div>
+</div>

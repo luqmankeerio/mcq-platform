@@ -1,0 +1,582 @@
+<div class="dashboard-page container">
+  <!-- Dashboard Header -->
+  <div class="dashboard-header">
+    <div class="header-titles">
+      <span class="badge badge-warning">Educator Portal</span>
+      <h1 class="page-title">Teacher Dashboard</h1>
+      <p class="page-subtitle">Manage curriculum MCQs, configure timed tests, issue private invitation links and monitor student scores.</p>
+    </div>
+
+    <!-- Tab switcher -->
+    <div class="tab-pills">
+      <button class="tab-btn" [class.active]="activeTab === 'mcqs'" (click)="activeTab = 'mcqs'">
+        <i class="fa-solid fa-question-circle"></i> My MCQs
+      </button>
+      <button class="tab-btn" [class.active]="activeTab === 'tests'" (click)="activeTab = 'tests'">
+        <i class="fa-solid fa-clipboard-check"></i> Online Tests
+      </button>
+      <button class="tab-btn" [class.active]="activeTab === 'results'" (click)="activeTab = 'results'">
+        <i class="fa-solid fa-chart-column"></i> Results & Scores
+      </button>
+    </div>
+  </div>
+
+  <!-- Toast / Feedback Alert -->
+  <div *ngIf="feedbackMessage" class="alert" [ngClass]="feedbackType === 'success' ? 'alert-success' : 'alert-danger'">
+    <i class="fa-solid" [ngClass]="feedbackType === 'success' ? 'fa-check' : 'fa-triangle-exclamation'"></i>
+    <span>{{ feedbackMessage }}</span>
+  </div>
+
+  <!-- TAB 1: MCQS MANAGEMENT -->
+  <div *ngIf="activeTab === 'mcqs'" class="tab-content">
+    <!-- Filter bar -->
+    <div class="filter-card card">
+      <h3 class="filter-title"><i class="fa-solid fa-filter"></i> Select Chapter to Manage Questions</h3>
+      <div class="filter-grid">
+        <div class="form-group">
+          <label>Class</label>
+          <select [(ngModel)]="selectedClassId" (ngModelChange)="onClassChange($event)" class="form-control">
+            <option [value]="0">-- Select Class --</option>
+            <option *ngFor="let c of classes" [value]="c.id">{{ c.name }}</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Subject</label>
+          <select [(ngModel)]="selectedSubjectId" (ngModelChange)="onSubjectChange($event)" [disabled]="!selectedClassId" class="form-control">
+            <option [value]="0">-- Select Subject --</option>
+            <option *ngFor="let s of subjects" [value]="s.id">{{ s.name }}</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Chapter</label>
+          <select [(ngModel)]="selectedChapterId" (ngModelChange)="onChapterChange($event)" [disabled]="!selectedSubjectId" class="form-control">
+            <option [value]="0">-- Select Chapter --</option>
+            <option *ngFor="let ch of chapters" [value]="ch.id">{{ ch.order_num }}. {{ ch.name }}</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- MCQs List Header -->
+    <div class="section-actions" *ngIf="selectedChapterId">
+      <div class="mcq-counter">
+        <strong>{{ chapterMcqs.length }}</strong> MCQ(s) in this chapter
+      </div>
+      <button class="btn btn-primary" (click)="openAddMcqModal()">
+        <i class="fa-solid fa-plus"></i> Add New MCQ
+      </button>
+    </div>
+
+    <!-- Empty or Prompt -->
+    <div *ngIf="!selectedChapterId" class="empty-state card">
+      <div class="empty-icon"><i class="fa-solid fa-arrow-up"></i></div>
+      <h3>Select a Class, Subject, and Chapter</h3>
+      <p>Use the filter controls above to view and add chapter-wise multiple choice questions.</p>
+    </div>
+
+    <div *ngIf="selectedChapterId && !loadingMcqs && chapterMcqs.length === 0" class="empty-state card">
+      <div class="empty-icon"><i class="fa-solid fa-file-circle-question"></i></div>
+      <h3>No MCQs in this Chapter</h3>
+      <p>Click "Add New MCQ" to create your first question with 4 options and explanation.</p>
+      <button class="btn btn-primary" (click)="openAddMcqModal()">Create MCQ</button>
+    </div>
+
+    <!-- MCQ Cards Grid -->
+    <div *ngIf="selectedChapterId && chapterMcqs.length > 0" class="mcqs-list">
+      <div *ngFor="let m of chapterMcqs; let i = index" class="mcq-item card">
+        <div class="mcq-top">
+          <div class="mcq-q-num">
+            <span>#{{ i + 1 }}</span>
+            <span class="badge" [ngClass]="{
+              'badge-success': m.difficulty === 'easy',
+              'badge-warning': m.difficulty === 'medium',
+              'badge-danger': m.difficulty === 'hard'
+            }">{{ m.difficulty | uppercase }}</span>
+          </div>
+          <div class="mcq-actions">
+            <button class="btn btn-secondary btn-sm" (click)="openEditMcqModal(m)">
+              <i class="fa-solid fa-pen"></i> Edit
+            </button>
+            <button class="btn btn-danger btn-sm" (click)="deleteMcq(m)">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </div>
+        </div>
+
+        <h4 class="mcq-question">{{ m.question_text }}</h4>
+
+        <div *ngIf="m.image_url" class="mcq-image-thumbnail">
+          <img [src]="m.image_url" alt="Question Image" />
+        </div>
+
+        <!-- 4 Options Grid -->
+        <div class="mcq-options-display">
+          <div
+            *ngFor="let o of m.options"
+            class="opt-item"
+            [class.is-correct]="o.is_correct"
+          >
+            <span class="opt-badge">{{ o.option_label }}</span>
+            <span class="opt-txt">{{ o.option_text }}</span>
+            <span *ngIf="o.is_correct" class="badge badge-success">Correct</span>
+          </div>
+        </div>
+
+        <div *ngIf="m.explanation" class="mcq-exp-display">
+          <strong><i class="fa-solid fa-lightbulb"></i> Explanation:</strong> {{ m.explanation }}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 2: ONLINE TESTS MANAGEMENT -->
+  <div *ngIf="activeTab === 'tests'" class="tab-content">
+    <div class="section-actions">
+      <h3>My Configured Online Tests</h3>
+      <button class="btn btn-primary" (click)="openAddTestModal()">
+        <i class="fa-solid fa-plus"></i> Create New Online Test
+      </button>
+    </div>
+
+    <!-- Tests table -->
+    <div class="data-table-wrapper" *ngIf="myTests.length > 0">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Test Title</th>
+            <th>Chapter</th>
+            <th>Time Limit</th>
+            <th>Status</th>
+            <th>Private Test Link</th>
+            <th>Invitations</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let t of myTests">
+            <td><strong>{{ t.title }}</strong></td>
+            <td>{{ t.chapter?.name || 'All Topics' }}</td>
+            <td><i class="fa-solid fa-stopwatch"></i> {{ t.time_limit_minutes }} mins</td>
+            <td>
+              <span class="badge" [ngClass]="t.is_active ? 'badge-success' : 'badge-neutral'">
+                {{ t.is_active ? 'ACTIVE' : 'INACTIVE' }}
+              </span>
+            </td>
+            <td>
+              <button class="btn btn-secondary btn-sm" (click)="copyTestLink(t)" title="Copy private URL">
+                <i class="fa-solid fa-copy"></i> Copy Link
+              </button>
+            </td>
+            <td>
+              <button class="btn btn-outline-primary btn-sm" (click)="openInviteModal(t)">
+                <i class="fa-solid fa-user-plus"></i> Manage Students
+              </button>
+            </td>
+            <td>
+              <div class="action-buttons">
+                <button class="btn btn-secondary btn-sm" (click)="openEditTestModal(t)" title="Edit Test Details & Questions">
+                  <i class="fa-solid fa-pen"></i> Edit
+                </button>
+                <button class="btn btn-secondary btn-sm" (click)="viewTestResults(t)" title="View Student Scores">
+                  <i class="fa-solid fa-square-poll-vertical"></i> Scores
+                </button>
+                <button class="btn btn-danger btn-sm" (click)="deleteTest(t)" title="Delete Test">
+                  <i class="fa-solid fa-trash"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div *ngIf="myTests.length === 0" class="empty-state card">
+      <div class="empty-icon"><i class="fa-solid fa-clipboard-list"></i></div>
+      <h3>No Online Tests Yet</h3>
+      <p>Create timed tests with private invitation links for your students.</p>
+      <button class="btn btn-primary" (click)="openAddTestModal()">Create First Test</button>
+    </div>
+  </div>
+
+  <!-- TAB 3: TEST RESULTS & STUDENT ATTEMPTS -->
+  <div *ngIf="activeTab === 'results'" class="tab-content">
+    <div class="section-actions">
+      <h3>
+        Student Results
+        <span *ngIf="selectedResultTest" class="text-primary">- {{ selectedResultTest.title }}</span>
+      </h3>
+    </div>
+
+    <div *ngIf="loadingResults" class="loading-state">
+      <div class="spinner"></div>
+      <p>Loading attempt records...</p>
+    </div>
+
+    <div *ngIf="!loadingResults && testResults.length > 0" class="data-table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Student Name</th>
+            <th>Email</th>
+            <th>Score</th>
+            <th>Percentage</th>
+            <th>Submitted At</th>
+            <th>Result</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let r of testResults">
+            <td><strong>{{ r.student?.full_name || 'Student' }}</strong></td>
+            <td>{{ r.student?.email }}</td>
+            <td><strong>{{ r.score }}</strong> / {{ r.total_questions }}</td>
+            <td>
+              <strong>{{ r.total_questions ? (r.score / r.total_questions * 100 | number:'1.0-0') : 0 }}%</strong>
+            </td>
+            <td>{{ r.submitted_at | date:'medium' }}</td>
+            <td>
+              <span class="badge" [ngClass]="(r.score / r.total_questions) >= 0.5 ? 'badge-success' : 'badge-danger'">
+                {{ (r.score / r.total_questions) >= 0.5 ? 'PASSED' : 'FAILED' }}
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div *ngIf="!loadingResults && testResults.length === 0" class="empty-state card">
+      <div class="empty-icon"><i class="fa-solid fa-chart-line"></i></div>
+      <h3>No Submissions Found</h3>
+      <p>Select a test from the "Online Tests" tab and click "Scores" to view submissions.</p>
+    </div>
+  </div>
+
+  <!-- MODAL: ADD / EDIT MCQ -->
+  <div *ngIf="showMcqModal" class="modal-overlay">
+    <div class="modal-card modal-lg">
+      <div class="modal-header">
+        <h3>{{ editingMcqId ? 'Edit MCQ' : 'Add New MCQ' }}</h3>
+        <button class="close-btn" (click)="closeMcqModal()">&times;</button>
+      </div>
+
+      <form [formGroup]="mcqForm" (ngSubmit)="saveMcq()">
+        <div class="modal-body">
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label>Chapter *</label>
+              <select formControlName="chapter_id" class="form-control">
+                <option [value]="null">-- Select Chapter --</option>
+                <option *ngFor="let ch of chapters" [value]="ch.id">{{ ch.order_num }}. {{ ch.name }}</option>
+              </select>
+            </div>
+            <div class="form-group w-30">
+              <label>Difficulty</label>
+              <select formControlName="difficulty" class="form-control">
+                <option value="easy">Easy</option>
+                <option value="medium">Medium</option>
+                <option value="hard">Hard</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Question Text *</label>
+            <textarea
+              formControlName="question_text"
+              rows="3"
+              class="form-control"
+              placeholder="Enter the question clearly..."
+            ></textarea>
+          </div>
+
+          <!-- Image Upload Support -->
+          <div class="form-group">
+            <label>Question Image / Diagram (Optional)</label>
+            <input type="file" (change)="onImageSelected($event)" accept="image/*" class="form-control" />
+            <span class="hint">Upload diagram or formula sheet image (stored in Supabase Storage).</span>
+            <div *ngIf="mcqForm.value.image_url && !selectedImageFile" class="mt-2">
+              <img [src]="mcqForm.value.image_url" alt="Existing Diagram" style="max-height: 100px;" />
+            </div>
+          </div>
+
+          <!-- 4 Options with Correct Answer Selector -->
+          <div class="options-form-section">
+            <label class="section-lbl">Options & Correct Answer (Mark one correct radio):</label>
+            <div formArrayName="options" class="options-form-grid">
+              <div
+                *ngFor="let opt of optionsArray.controls; let idx = index"
+                [formGroupName]="idx"
+                class="opt-form-row"
+                [class.marked-correct]="opt.value.is_correct"
+              >
+                <div class="radio-wrap">
+                  <input
+                    type="radio"
+                    name="correctSelector"
+                    [checked]="opt.value.is_correct"
+                    (change)="setCorrectOption(idx)"
+                    title="Mark as correct answer"
+                  />
+                  <span class="badge">{{ opt.value.option_label }}</span>
+                </div>
+                <input
+                  type="text"
+                  formControlName="option_text"
+                  class="form-control"
+                  placeholder="Enter option {{ opt.value.option_label }} text..."
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- Explanation -->
+          <div class="form-group mt-3">
+            <label>Explanation & Learning Concept (Shown after answering)</label>
+            <textarea
+              formControlName="explanation"
+              rows="2"
+              class="form-control"
+              placeholder="Provide a detailed explanation why this choice is correct..."
+            ></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeMcqModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary" [disabled]="uploadingImage">
+            <span *ngIf="uploadingImage" class="spinner"></span>
+            <span *ngIf="!uploadingImage">{{ editingMcqId ? 'Save Changes' : 'Create MCQ' }}</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: CREATE / EDIT TEST -->
+  <div *ngIf="showTestModal" class="modal-overlay">
+    <div class="modal-card modal-lg">
+      <div class="modal-header">
+        <div>
+          <h3>{{ editingTestId ? 'Edit Online Test' : 'Create New Online Test' }}</h3>
+          <p class="modal-subtitle">Pick questions across chapters, configure time limit, and generate a private invite link.</p>
+        </div>
+        <button class="close-btn" (click)="closeTestModal()">&times;</button>
+      </div>
+
+      <form [formGroup]="testForm" (ngSubmit)="saveTest()">
+        <div class="modal-body">
+          <div class="form-row">
+            <div class="form-group flex-2">
+              <label>Test Title *</label>
+              <input type="text" formControlName="title" placeholder="e.g. Physics Chapter 1 & 2 Combined Mock Test" class="form-control" />
+            </div>
+            <div class="form-group flex-1">
+              <label>Time Limit (Minutes) *</label>
+              <input type="number" formControlName="time_limit_minutes" min="1" max="240" class="form-control" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Description / Instructions (Optional)</label>
+            <input type="text" formControlName="description" placeholder="e.g. Negative marking applies. Calculator is not allowed." class="form-control" />
+          </div>
+
+          <!-- Cascading Selectors: Class -> Subject -> Chapter -->
+          <div class="cascade-box card mb-3">
+            <label class="section-title">
+              <i class="fa-solid fa-filter"></i> Select Questions to Include (Class &rarr; Subject &rarr; Chapter)
+            </label>
+            <div class="form-row">
+              <div class="form-group flex-1">
+                <label>1. Class:</label>
+                <select
+                  [ngModel]="testModalClassId"
+                  [ngModelOptions]="{standalone: true}"
+                  (ngModelChange)="onTestModalClassChange($event)"
+                  class="form-control"
+                >
+                  <option [value]="0">-- Select Class --</option>
+                  <option *ngFor="let c of classes" [value]="c.id">{{ c.name }}</option>
+                </select>
+              </div>
+
+              <div class="form-group flex-1">
+                <label>2. Subject:</label>
+                <select
+                  [ngModel]="testModalSubjectId"
+                  [ngModelOptions]="{standalone: true}"
+                  (ngModelChange)="onTestModalSubjectChange($event)"
+                  class="form-control"
+                  [disabled]="testModalSubjects.length === 0"
+                >
+                  <option [value]="0">-- Select Subject --</option>
+                  <option *ngFor="let s of testModalSubjects" [value]="s.id">{{ s.name }}</option>
+                </select>
+              </div>
+
+              <div class="form-group flex-1">
+                <label>3. Chapter:</label>
+                <select
+                  [ngModel]="testModalChapterId"
+                  [ngModelOptions]="{standalone: true}"
+                  (ngModelChange)="onTestModalChapterChange($event)"
+                  class="form-control"
+                  [disabled]="testModalChapters.length === 0"
+                >
+                  <option [value]="0">-- Select Chapter --</option>
+                  <option *ngFor="let ch of testModalChapters" [value]="ch.id">{{ ch.order_num }}. {{ ch.name }}</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- MCQ Selector Grid -->
+          <div class="test-mcq-selector">
+            <div class="selector-header">
+              <label>
+                Chapter Questions
+                <span class="badge badge-primary ms-1">{{ selectedTestMcqIds.size }} Total Selected</span>
+              </label>
+              <div class="quick-btns">
+                <button
+                  type="button"
+                  class="btn btn-secondary btn-sm"
+                  (click)="selectAllAvailableMcqs()"
+                  [disabled]="availableTestMcqs.length === 0"
+                >
+                  Select All in Chapter
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-secondary btn-sm"
+                  (click)="deselectCurrentChapterMcqs()"
+                  [disabled]="availableTestMcqs.length === 0"
+                >
+                  Deselect Chapter
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-outline-danger btn-sm"
+                  (click)="clearAllSelectedTestMcqs()"
+                  *ngIf="selectedTestMcqIds.size > 0"
+                >
+                  Clear All ({{ selectedTestMcqIds.size }})
+                </button>
+              </div>
+            </div>
+
+            <div *ngIf="loadingTestMcqs" class="text-center p-3">
+              <span class="spinner"></span>
+              <p class="text-muted text-sm mt-1">Loading MCQs for this chapter...</p>
+            </div>
+
+            <div *ngIf="!loadingTestMcqs" class="mcqs-checkbox-list">
+              <div
+                *ngFor="let m of availableTestMcqs"
+                class="mcq-checkbox-item"
+                [class.checked]="selectedTestMcqIds.has(m.id)"
+                (click)="toggleTestMcq(m.id)"
+              >
+                <input
+                  type="checkbox"
+                  [checked]="selectedTestMcqIds.has(m.id)"
+                  (click)="$event.stopPropagation()"
+                  (change)="toggleTestMcq(m.id)"
+                />
+                <span class="mcq-txt">{{ m.question_text }}</span>
+                <span class="badge" [ngClass]="{
+                  'badge-success': m.difficulty === 'easy',
+                  'badge-warning': m.difficulty === 'medium',
+                  'badge-danger': m.difficulty === 'hard'
+                }">{{ m.difficulty }}</span>
+              </div>
+
+              <div *ngIf="availableTestMcqs.length === 0 && testModalChapterId === 0" class="p-3 text-muted text-center">
+                <i class="fa-solid fa-arrow-up me-1"></i> Select Class &rarr; Subject &rarr; Chapter above to view questions.
+              </div>
+
+              <div *ngIf="availableTestMcqs.length === 0 && testModalChapterId > 0" class="p-3 text-muted text-center">
+                <i class="fa-solid fa-circle-info me-1"></i> No questions found in this chapter yet. You can add questions from the MCQs tab.
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group mt-3">
+            <label class="checkbox-label">
+              <input type="checkbox" formControlName="is_active" />
+              <span>Make Test Active immediately (students with private link can access it)</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeTestModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary" [disabled]="testForm.invalid || selectedTestMcqIds.size === 0">
+            <i class="fa-solid fa-check me-1"></i>
+            {{ editingTestId ? 'Update Test' : 'Create Online Test (' + selectedTestMcqIds.size + ' Questions)' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: INVITE STUDENTS (Requirement #10) -->
+  <div *ngIf="showInviteModal && currentInvitingTest" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div>
+          <h3>Manage Test Invitations</h3>
+          <p class="text-muted text-sm">{{ currentInvitingTest.title }}</p>
+        </div>
+        <button class="close-btn" (click)="closeInviteModal()">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Private Link Box -->
+        <div class="private-link-box">
+          <label class="form-label">Private Test Link:</label>
+          <div class="link-input-group">
+            <input type="text" [value]="getPrivateTestLink(currentInvitingTest)" readonly class="form-control" />
+            <button class="btn btn-primary" (click)="copyTestLink(currentInvitingTest)">
+              <i class="fa-solid fa-copy"></i>
+            </button>
+          </div>
+          <span class="hint">Only enrolled students invited below can enter this private test.</span>
+        </div>
+
+        <div class="invite-header mt-3">
+          <h4>Enrolled Students ({{ invitedStudentIds.size }} invited)</h4>
+          <button class="btn btn-secondary btn-sm" (click)="inviteAllStudents()">Invite All</button>
+        </div>
+
+        <!-- Student list -->
+        <div class="students-invite-list">
+          <div *ngFor="let s of allStudents" class="student-invite-row">
+            <div class="student-info">
+              <span class="name">{{ s.full_name }}</span>
+              <span class="email">{{ s.email }}</span>
+            </div>
+            <button
+              class="btn btn-sm"
+              [ngClass]="invitedStudentIds.has(s.id) ? 'btn-success' : 'btn-outline-primary'"
+              (click)="toggleStudentInvite(s.id)"
+            >
+              <i class="fa-solid" [ngClass]="invitedStudentIds.has(s.id) ? 'fa-check' : 'fa-plus'"></i>
+              {{ invitedStudentIds.has(s.id) ? 'Invited' : 'Invite' }}
+            </button>
+          </div>
+
+          <div *ngIf="allStudents.length === 0" class="p-3 text-muted text-center">
+            No registered students found in database.
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-primary" (click)="closeInviteModal()">Done</button>
+      </div>
+    </div>
+  </div>
+</div>
+

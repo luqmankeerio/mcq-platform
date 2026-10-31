@@ -1,0 +1,491 @@
+<div class="admin-page container">
+  <!-- Top Header -->
+  <div class="admin-header">
+    <div>
+      <span class="badge badge-danger">Administrator Console</span>
+      <h1 class="page-title">Admin Management Portal</h1>
+      <p class="page-subtitle">Full CRUD control over students, teachers, subjects, chapters, MCQs, and tests.</p>
+    </div>
+
+    <!-- Quick Stats Cards -->
+    <div class="stats-overview">
+      <div class="stat-box">
+        <span class="val">{{ stats.students }}</span>
+        <span class="lbl">Students</span>
+      </div>
+      <div class="stat-box">
+        <span class="val">{{ stats.teachers }}</span>
+        <span class="lbl">Teachers</span>
+      </div>
+      <div class="stat-box">
+        <span class="val">{{ stats.subjects }}</span>
+        <span class="lbl">Subjects</span>
+      </div>
+      <div class="stat-box">
+        <span class="val">{{ stats.chapters }}</span>
+        <span class="lbl">Chapters</span>
+      </div>
+      <div class="stat-box">
+        <span class="val">{{ stats.tests }}</span>
+        <span class="lbl">Tests</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notification Toast -->
+  <div *ngIf="feedbackMsg" class="alert" [ngClass]="feedbackType === 'success' ? 'alert-success' : 'alert-danger'">
+    <i class="fa-solid" [ngClass]="feedbackType === 'success' ? 'fa-check' : 'fa-circle-exclamation'"></i>
+    <span>{{ feedbackMsg }}</span>
+  </div>
+
+  <!-- Tab Buttons -->
+  <div class="admin-tabs">
+    <button class="admin-tab-btn" [class.active]="activeTab === 'users'" (click)="activeTab = 'users'">
+      <i class="fa-solid fa-users"></i> Users &amp; Roles
+    </button>
+    <button class="admin-tab-btn" [class.active]="activeTab === 'subjects'" (click)="activeTab = 'subjects'">
+      <i class="fa-solid fa-book"></i> Subjects
+    </button>
+    <button class="admin-tab-btn" [class.active]="activeTab === 'chapters'" (click)="activeTab = 'chapters'">
+      <i class="fa-solid fa-list-ol"></i> Chapters
+    </button>
+    <button class="admin-tab-btn" [class.active]="activeTab === 'mcqs'" (click)="activeTab = 'mcqs'">
+      <i class="fa-solid fa-question-circle"></i> MCQs
+    </button>
+    <button class="admin-tab-btn" [class.active]="activeTab === 'tests'" (click)="activeTab = 'tests'">
+      <i class="fa-solid fa-clipboard-check"></i> Tests
+    </button>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- TAB 1: USERS                                                    -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <div *ngIf="activeTab === 'users'" class="tab-pane">
+    <div class="pane-controls">
+      <div class="search-filter-box">
+        <input
+          type="text"
+          [(ngModel)]="searchUserQuery"
+          placeholder="Search by name or email..."
+          class="form-control search-input"
+        />
+        <div class="filter-pills">
+          <button class="filter-pill" [class.active]="userFilter === 'all'" (click)="userFilter = 'all'">All</button>
+          <button class="filter-pill" [class.active]="userFilter === 'student'" (click)="userFilter = 'student'">Students</button>
+          <button class="filter-pill" [class.active]="userFilter === 'teacher'" (click)="userFilter = 'teacher'">Teachers</button>
+          <button class="filter-pill" [class.active]="userFilter === 'admin'" (click)="userFilter = 'admin'">Admins</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="data-table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Name</th><th>Email</th><th>Role</th><th>Phone</th><th>Joined</th><th>Change Role</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let u of filteredUsers">
+            <td><strong>{{ u.full_name }}</strong></td>
+            <td>{{ u.email }}</td>
+            <td>
+              <span class="badge" [ngClass]="{
+                'badge-primary': u.role === 'student',
+                'badge-warning': u.role === 'teacher',
+                'badge-danger':  u.role === 'admin'
+              }">{{ u.role }}</span>
+            </td>
+            <td>{{ u.phone || 'N/A' }}</td>
+            <td>{{ u.created_at | date:'mediumDate' }}</td>
+            <td>
+              <select [ngModel]="u.role" (ngModelChange)="changeRole(u, $event)" class="form-control role-select">
+                <option value="student">Student</option>
+                <option value="teacher">Teacher</option>
+                <option value="admin">Admin</option>
+              </select>
+            </td>
+            <td>
+              <div class="action-buttons">
+                <button class="btn btn-secondary btn-sm" (click)="openEditUser(u)">
+                  <i class="fa-solid fa-pen"></i> Edit
+                </button>
+                <button class="btn btn-danger btn-sm" (click)="deleteUser(u)">
+                  <i class="fa-solid fa-trash"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+          <tr *ngIf="filteredUsers.length === 0">
+            <td colspan="7" class="text-center text-muted">No users found.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- TAB 2: SUBJECTS                                                 -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <div *ngIf="activeTab === 'subjects'" class="tab-pane">
+    <div class="pane-controls">
+      <div class="cascade-filter-bar">
+        <label>Filter by Class:</label>
+        <select [ngModel]="subjectFilterClassId" (ngModelChange)="onSubjectFilterClassChange($event)" class="form-control w-auto">
+          <option [value]="0">All Classes</option>
+          <option *ngFor="let c of classes" [value]="c.id">{{ c.name }}</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" (click)="openAddSubject()">
+        <i class="fa-solid fa-plus"></i> Add New Subject
+      </button>
+    </div>
+
+    <div class="data-table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Icon</th><th>Subject Name</th><th>Class</th><th>Description</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let s of subjects">
+            <td><i class="fa-solid" [ngClass]="s.icon || 'fa-book'" style="font-size:1.25rem;color:var(--primary);"></i></td>
+            <td><strong>{{ s.name }}</strong></td>
+            <td><span class="badge badge-primary">{{ s.class?.name || ('Class ' + s.class_id) }}</span></td>
+            <td>{{ s.description || 'N/A' }}</td>
+            <td>
+              <div class="action-buttons">
+                <button class="btn btn-secondary btn-sm" (click)="openEditSubject(s)">
+                  <i class="fa-solid fa-pen"></i> Edit
+                </button>
+                <button class="btn btn-danger btn-sm" (click)="deleteSubject(s)">
+                  <i class="fa-solid fa-trash"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+          <tr *ngIf="subjects.length === 0">
+            <td colspan="5" class="text-center text-muted">
+              {{ allSubjects.length === 0 ? 'No subjects yet. Add your first subject.' : 'No subjects for selected class.' }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- TAB 3: CHAPTERS                                                 -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <div *ngIf="activeTab === 'chapters'" class="tab-pane">
+    <div class="pane-controls">
+      <div class="cascade-filter-bar">
+        <!-- Step 1: Select Class -->
+        <label>Class:</label>
+        <select [ngModel]="chapterFilterClassId" (ngModelChange)="onChapterFilterClassChange($event)" class="form-control w-auto">
+          <option [value]="0">-- Select Class --</option>
+          <option *ngFor="let c of classes" [value]="c.id">{{ c.name }}</option>
+        </select>
+
+        <!-- Step 2: Select Subject (shown after class is chosen) -->
+        <ng-container *ngIf="chapterFilterClassId > 0">
+          <label>Subject:</label>
+          <select [ngModel]="chapterFilterSubjectId" (ngModelChange)="onChapterFilterSubjectChange($event)" class="form-control w-auto">
+            <option [value]="0">-- Select Subject --</option>
+            <option *ngFor="let s of chapterSubjectsForFilter" [value]="s.id">{{ s.name }}</option>
+          </select>
+        </ng-container>
+      </div>
+
+      <button class="btn btn-primary" (click)="openAddChapter()">
+        <i class="fa-solid fa-plus"></i> Add New Chapter
+      </button>
+    </div>
+
+    <div class="data-table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Order #</th><th>Chapter Name</th><th>Description</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let ch of chapters">
+            <td><strong class="badge badge-neutral">{{ ch.order_num }}</strong></td>
+            <td><strong>{{ ch.name }}</strong></td>
+            <td>{{ ch.description || 'N/A' }}</td>
+            <td>
+              <div class="action-buttons">
+                <button class="btn btn-secondary btn-sm" (click)="openEditChapter(ch)">
+                  <i class="fa-solid fa-pen"></i> Edit
+                </button>
+                <button class="btn btn-danger btn-sm" (click)="deleteChapter(ch)">
+                  <i class="fa-solid fa-trash"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+          <tr *ngIf="chapters.length === 0">
+            <td colspan="4" class="text-center text-muted">
+              {{ chapterFilterSubjectId ? 'No chapters in this subject.' : 'Select a class and subject to view chapters.' }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- TAB 4: MCQs                                                     -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <div *ngIf="activeTab === 'mcqs'" class="tab-pane">
+    <div class="pane-controls">
+      <div class="cascade-filter-bar">
+        <!-- Step 1: Class -->
+        <label>Class:</label>
+        <select [ngModel]="mcqFilterClassId" (ngModelChange)="onMcqFilterClassChange($event)" class="form-control w-auto">
+          <option [value]="0">-- Select Class --</option>
+          <option *ngFor="let c of classes" [value]="c.id">{{ c.name }}</option>
+        </select>
+
+        <!-- Step 2: Subject -->
+        <ng-container *ngIf="mcqFilterClassId > 0">
+          <label>Subject:</label>
+          <select [ngModel]="mcqFilterSubjectId" (ngModelChange)="onMcqFilterSubjectChange($event)" class="form-control w-auto">
+            <option [value]="0">-- Select Subject --</option>
+            <option *ngFor="let s of mcqFilterSubjects" [value]="s.id">{{ s.name }}</option>
+          </select>
+        </ng-container>
+
+        <!-- Step 3: Chapter -->
+        <ng-container *ngIf="mcqFilterSubjectId > 0">
+          <label>Chapter:</label>
+          <select [ngModel]="mcqFilterChapterId" (ngModelChange)="onMcqFilterChapterChange($event)" class="form-control w-auto">
+            <option [value]="0">-- Select Chapter --</option>
+            <option *ngFor="let ch of mcqFilterChapters" [value]="ch.id">{{ ch.order_num }}. {{ ch.name }}</option>
+          </select>
+        </ng-container>
+      </div>
+    </div>
+
+    <div *ngIf="loadingMcqs" class="loading-state">
+      <div class="spinner"></div>
+      <p>Loading questions...</p>
+    </div>
+
+    <div *ngIf="!loadingMcqs && mcqs.length > 0" class="mcqs-admin-list">
+      <div *ngFor="let m of mcqs" class="mcq-admin-card card mb-2">
+        <div class="mcq-admin-header">
+          <strong>{{ m.question_text }}</strong>
+          <button class="btn btn-danger btn-sm" (click)="deleteAdminMcq(m)">
+            <i class="fa-solid fa-trash"></i> Delete
+          </button>
+        </div>
+        <div class="options-inline">
+          <span
+            *ngFor="let o of m.options"
+            class="opt-pill"
+            [class.correct]="o.is_correct"
+          >
+            {{ o.option_label }}: {{ o.option_text }}
+          </span>
+        </div>
+        <div *ngIf="m.explanation" class="mcq-explanation">
+          <i class="fa-solid fa-lightbulb"></i> {{ m.explanation }}
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="!loadingMcqs && mcqs.length === 0 && mcqFilterChapterId === 0" class="empty-state card">
+      <i class="fa-solid fa-filter fa-2x mb-2"></i>
+      <p>Select a Class → Subject → Chapter to view and manage MCQs.</p>
+    </div>
+
+    <div *ngIf="!loadingMcqs && mcqs.length === 0 && mcqFilterChapterId > 0" class="empty-state card">
+      <p>No MCQs in this chapter yet. Add them via the Teacher Dashboard.</p>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- TAB 5: TESTS                                                    -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <div *ngIf="activeTab === 'tests'" class="tab-pane">
+    <div class="pane-controls">
+      <h3>All Platform Tests</h3>
+    </div>
+
+    <div class="data-table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Title</th><th>Chapter</th><th>Duration</th><th>Invite Token</th><th>Status</th><th>Toggle</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let t of tests">
+            <td><strong>{{ t.title }}</strong></td>
+            <td>{{ t.chapter?.name || 'All Topics' }}</td>
+            <td>{{ t.time_limit_minutes }} mins</td>
+            <td><code>{{ t.invite_token }}</code></td>
+            <td>
+              <span class="badge" [ngClass]="t.is_active ? 'badge-success' : 'badge-neutral'">
+                {{ t.is_active ? 'ACTIVE' : 'INACTIVE' }}
+              </span>
+            </td>
+            <td>
+              <button
+                class="btn btn-sm"
+                [ngClass]="t.is_active ? 'btn-danger' : 'btn-success'"
+                (click)="toggleTestStatus(t)"
+              >
+                {{ t.is_active ? 'Deactivate' : 'Activate' }}
+              </button>
+            </td>
+            <td>
+              <button class="btn btn-danger btn-sm" (click)="deleteAdminTest(t)">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="tests.length === 0">
+            <td colspan="7" class="text-center text-muted">No tests created yet.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- MODAL: EDIT USER                                                -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <div *ngIf="showUserModal && editingUser" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Edit User: {{ editingUser.email }}</h3>
+        <button class="close-btn" (click)="closeUserModal()">&times;</button>
+      </div>
+      <form [formGroup]="userForm" (ngSubmit)="saveUser()">
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Full Name *</label>
+            <input type="text" formControlName="full_name" class="form-control" />
+          </div>
+          <div class="form-group">
+            <label>Role</label>
+            <select formControlName="role" class="form-control">
+              <option value="student">Student</option>
+              <option value="teacher">Teacher</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Phone</label>
+            <input type="text" formControlName="phone" class="form-control" />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeUserModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- MODAL: ADD / EDIT SUBJECT                                       -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <div *ngIf="showSubjectModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>{{ editingSubjectId ? 'Edit Subject' : 'Add New Subject' }}</h3>
+        <button class="close-btn" (click)="closeSubjectModal()">&times;</button>
+      </div>
+      <form [formGroup]="subjectForm" (ngSubmit)="saveSubject()">
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Class *</label>
+            <select formControlName="class_id" class="form-control">
+              <option [value]="null">-- Select Class --</option>
+              <option *ngFor="let c of classes" [value]="c.id">{{ c.name }}</option>
+            </select>
+            <small *ngIf="classes.length === 0" class="text-danger">
+              No classes found. Please run the Supabase migration SQL first.
+            </small>
+          </div>
+          <div class="form-group">
+            <label>Subject Name *</label>
+            <input type="text" formControlName="name" placeholder="e.g. Physics" class="form-control" />
+          </div>
+          <div class="form-group">
+            <label>FontAwesome Icon</label>
+            <input type="text" formControlName="icon" placeholder="e.g. fa-atom" class="form-control" />
+            <small class="text-muted">Use FontAwesome 6 solid icon names, e.g. fa-atom, fa-flask, fa-calculator</small>
+          </div>
+          <div class="form-group">
+            <label>Description</label>
+            <textarea formControlName="description" rows="2" class="form-control"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeSubjectModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary" [disabled]="subjectForm.invalid">
+            {{ editingSubjectId ? 'Update Subject' : 'Create Subject' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- MODAL: ADD / EDIT CHAPTER (cascading Class → Subject)          -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <div *ngIf="showChapterModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>{{ editingChapterId ? 'Edit Chapter' : 'Add New Chapter' }}</h3>
+        <button class="close-btn" (click)="closeChapterModal()">&times;</button>
+      </div>
+      <form [formGroup]="chapterForm" (ngSubmit)="saveChapter()">
+        <div class="modal-body">
+          <!-- Step 1: Choose Class -->
+          <div class="form-group">
+            <label>Class *</label>
+            <select formControlName="class_id" class="form-control" (change)="onChapterModalClassChange($any($event.target).value)">
+              <option [value]="null">-- Select Class --</option>
+              <option *ngFor="let c of classes" [value]="c.id">{{ c.name }}</option>
+            </select>
+          </div>
+          <!-- Step 2: Choose Subject (filtered by class) -->
+          <div class="form-group">
+            <label>Subject *</label>
+            <select formControlName="subject_id" class="form-control" [disabled]="chapterModalSubjects.length === 0">
+              <option [value]="null">
+                {{ chapterModalSubjects.length === 0 ? '-- Select Class first --' : '-- Select Subject --' }}
+              </option>
+              <option *ngFor="let s of chapterModalSubjects" [value]="s.id">{{ s.name }}</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Chapter Name *</label>
+            <input type="text" formControlName="name" placeholder="e.g. Vectors and Equilibrium" class="form-control" />
+          </div>
+          <div class="form-group">
+            <label>Order Number *</label>
+            <input type="number" formControlName="order_num" min="1" class="form-control" />
+          </div>
+          <div class="form-group">
+            <label>Description</label>
+            <textarea formControlName="description" rows="2" class="form-control"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeChapterModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary" [disabled]="chapterForm.invalid">
+            {{ editingChapterId ? 'Update Chapter' : 'Create Chapter' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

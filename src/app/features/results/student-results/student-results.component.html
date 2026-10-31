@@ -1,0 +1,139 @@
+<div class="results-page container">
+  <div class="page-header">
+    <div class="breadcrumb">
+      <a routerLink="/"><i class="fa-solid fa-house"></i> Home</a>
+      <i class="fa-solid fa-chevron-right separator"></i>
+      <span class="current">My Test Results</span>
+    </div>
+    <h1 class="page-title">My Test History & Attempts</h1>
+    <p class="page-subtitle">Review your past scores, performance metrics, and review detailed question solutions</p>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-state">
+    <div class="spinner"></div>
+    <p>Loading your attempts...</p>
+  </div>
+
+  <!-- Error Alert -->
+  <div *ngIf="error" class="alert alert-danger">
+    <i class="fa-solid fa-circle-exclamation"></i>
+    <span>{{ error }}</span>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!loading && !error && attempts.length === 0" class="empty-state card">
+    <div class="empty-icon"><i class="fa-solid fa-clipboard-list"></i></div>
+    <h3>No Test Attempts Yet</h3>
+    <p>You haven't participated in any online tests yet. When your teachers assign tests through private links, your scores will appear here.</p>
+    <a routerLink="/classes" class="btn btn-primary">Start Chapter MCQs Practice</a>
+  </div>
+
+  <!-- Attempts List Table -->
+  <div *ngIf="!loading && !error && attempts.length > 0" class="attempts-content">
+    <div class="data-table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Test Title</th>
+            <th>Subject / Chapter</th>
+            <th>Date & Time</th>
+            <th>Score</th>
+            <th>Percentage</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let a of attempts">
+            <td>
+              <strong>{{ a.test?.title || 'Online Test' }}</strong>
+            </td>
+            <td>
+              {{ a.test?.chapter?.name || 'Full Syllabus' }}
+            </td>
+            <td>
+              {{ a.submitted_at ? (a.submitted_at | date:'medium') : 'In progress' }}
+            </td>
+            <td>
+              <strong>{{ a.score }}</strong> / {{ a.total_questions }}
+            </td>
+            <td>
+              <strong>{{ getPercentage(a.score, a.total_questions) }}%</strong>
+            </td>
+            <td>
+              <span class="badge" [ngClass]="getPercentage(a.score, a.total_questions) >= 50 ? 'badge-success' : 'badge-danger'">
+                {{ getPercentage(a.score, a.total_questions) >= 50 ? 'PASSED' : 'FAILED' }}
+              </span>
+            </td>
+            <td>
+              <button class="btn btn-outline-primary btn-sm" (click)="viewDetails(a)">
+                <i class="fa-solid fa-eye"></i> Review Solutions
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Detailed Attempt Review Modal -->
+  <div *ngIf="selectedAttempt" class="modal-overlay">
+    <div class="modal-card modal-lg">
+      <div class="modal-header">
+        <div>
+          <h3>{{ selectedAttempt.test?.title }} - Detailed Answer Sheet</h3>
+          <span class="badge badge-primary">
+            Score: {{ selectedAttempt.score }} / {{ selectedAttempt.total_questions }} ({{ getPercentage(selectedAttempt.score, selectedAttempt.total_questions) }}%)
+          </span>
+        </div>
+        <button class="close-btn" (click)="closeDetails()">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div *ngFor="let ans of selectedAttempt.answers; let i = index" class="review-question-card card mb-3">
+          <div class="review-q-header">
+            <span class="q-num">Q{{ i + 1 }}.</span>
+            <span class="status-badge" [ngClass]="ans.is_correct ? 'badge-success' : 'badge-danger'">
+              <i class="fa-solid" [ngClass]="ans.is_correct ? 'fa-check' : 'fa-xmark'"></i>
+              {{ ans.is_correct ? 'Correct' : 'Incorrect' }}
+            </span>
+          </div>
+
+          <p class="review-q-text">{{ ans.mcq?.question_text }}</p>
+
+          <div *ngIf="ans.mcq?.image_url" class="review-img-wrap">
+            <img [src]="ans.mcq?.image_url" alt="Question Image" />
+          </div>
+
+          <!-- Options Breakdown -->
+          <div class="review-options">
+            <div
+              *ngFor="let opt of ans.mcq?.options"
+              class="review-option"
+              [class.correct-option]="opt.is_correct"
+              [class.student-selected]="ans.selected_option_id === opt.id"
+              [class.student-wrong]="ans.selected_option_id === opt.id && !opt.is_correct"
+            >
+              <span class="opt-label">{{ opt.option_label }}.</span>
+              <span class="opt-text">{{ opt.option_text }}</span>
+              <span *ngIf="opt.is_correct" class="opt-tag tag-correct"><i class="fa-solid fa-check"></i> Correct Solution</span>
+              <span *ngIf="ans.selected_option_id === opt.id && !opt.is_correct" class="opt-tag tag-wrong"><i class="fa-solid fa-xmark"></i> Your Choice</span>
+            </div>
+          </div>
+
+          <!-- Explanation -->
+          <div *ngIf="ans.mcq?.explanation" class="review-explanation">
+            <strong><i class="fa-solid fa-lightbulb"></i> Explanation:</strong>
+            <p>{{ ans.mcq?.explanation }}</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeDetails()">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+

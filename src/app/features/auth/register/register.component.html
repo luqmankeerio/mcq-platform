@@ -1,0 +1,115 @@
+<div class="auth-page">
+  <div class="auth-card">
+    <div class="auth-header">
+      <div class="brand-circle">
+        <i class="fa-solid fa-user-plus"></i>
+      </div>
+      <h2>Create Student Account</h2>
+      <p>Join to access Class XI & XII chapter-wise MCQs</p>
+    </div>
+
+    <div *ngIf="errorMessage" class="alert alert-danger">
+      <i class="fa-solid fa-circle-exclamation"></i>
+      <span>{{ errorMessage }}</span>
+    </div>
+
+    <div *ngIf="successMessage" class="alert alert-success">
+      <i class="fa-solid fa-circle-check"></i>
+      <span>{{ successMessage }}</span>
+    </div>
+
+    <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
+      <div class="form-group">
+        <label for="fullName">Full Name</label>
+        <div class="input-with-icon">
+          <i class="fa-solid fa-user icon"></i>
+          <input
+            id="fullName"
+            type="text"
+            formControlName="fullName"
+            placeholder="John Doe"
+            class="form-control"
+          />
+        </div>
+        <div *ngIf="registerForm.get('fullName')?.touched && registerForm.get('fullName')?.invalid" class="error-text">
+          Name must be at least 3 characters.
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="regEmail">Email Address</label>
+        <div class="input-with-icon">
+          <i class="fa-solid fa-envelope icon"></i>
+          <input
+            id="regEmail"
+            type="email"
+            formControlName="email"
+            placeholder="student@example.com"
+            class="form-control"
+          />
+        </div>
+        <div *ngIf="registerForm.get('email')?.touched && registerForm.get('email')?.invalid" class="error-text">
+          Please enter a valid email.
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="phone">Phone / WhatsApp (Optional)</label>
+        <div class="input-with-icon">
+          <i class="fa-solid fa-phone icon"></i>
+          <input
+            id="phone"
+            type="text"
+            formControlName="phone"
+            placeholder="+92 300 1234567"
+            class="form-control"
+          />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="regPassword">Password</label>
+        <div class="input-with-icon">
+          <i class="fa-solid fa-lock icon"></i>
+          <input
+            id="regPassword"
+            type="password"
+            formControlName="password"
+            placeholder="At least 6 characters"
+            class="form-control"
+          />
+        </div>
+        <div *ngIf="registerForm.get('password')?.touched && registerForm.get('password')?.invalid" class="error-text">
+          Password must be at least 6 characters.
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="confirmPassword">Confirm Password</label>
+        <div class="input-with-icon">
+          <i class="fa-solid fa-shield-check icon"></i>
+          <input
+            id="confirmPassword"
+            type="password"
+            formControlName="confirmPassword"
+            placeholder="Re-enter password"
+            class="form-control"
+          />
+        </div>
+        <div *ngIf="registerForm.hasError('mismatch') && registerForm.get('confirmPassword')?.touched" class="error-text">
+          Passwords do not match.
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary w-100" [disabled]="loading">
+        <span *ngIf="loading" class="spinner"></span>
+        <span *ngIf="!loading">Create Student Account <i class="fa-solid fa-arrow-right"></i></span>
+      </button>
+    </form>
+
+    <div class="auth-footer">
+      <p>Already have an account? <a routerLink="/login">Sign In</a></p>
+    </div>
+  </div>
+</div>
+
